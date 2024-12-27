@@ -1,14 +1,21 @@
+import { MintResult } from '../../../types';
+import { processBatch, transferTokens } from '../../../lib/nftProcessing';
+import { isValidFact } from './validation';
+
+const BATCH_SIZE = 5;
+const DELAY_BETWEEN_BATCHES = 1000; // 1 second
+
 const ALLOWED_ORIGINS = [
     'http://localhost:3001',
     'https://galleria-df.vercel.app',
 ];
 
-const getCorsHeaders = (req: Request) => {
-    const origin = req.headers.get('origin'); // Use 'get' to access headers in Request
-    const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin || '');
+const getCorsHeaders = (request: Request): HeadersInit => {
+    const origin = request.headers.get('origin');
+    const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
     return {
-        'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null',
+        'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '*', // Changed from 'null' to '*'
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400', // 24 hours cache for preflight requests
@@ -24,12 +31,10 @@ export async function OPTIONS(request: Request) {
     });
 }
 
-import { isValidFact } from './validation';
-
 /**
  * Main POST handler for batch NFT creation
  * @param request Incoming HTTP request
- * @returns NextResponse with operation results
+ * @returns Response with operation results
  */
 export async function POST(request: Request) {
     try {

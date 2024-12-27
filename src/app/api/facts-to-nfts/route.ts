@@ -12,20 +12,22 @@ const ALLOWED_ORIGINS = [
   'https://galleria-df.vercel.app',
 ];
 
-const getCorsHeaders = (req) => {
-  const origin = req.headers.origin; // Extract the origin from the incoming request
-  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+const getCorsHeaders = (request: Request): HeadersInit => {
+  const origin = request.headers.get('origin');
+  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Dynamically set allowed origin
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 };
 
-
-export async function OPTIONS() {
-  return corsResponse(new NextResponse(null, { status: 200 }));
+export async function OPTIONS(request: Request) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(request),
+  });
 }
 
 interface MintedFact {
@@ -37,6 +39,7 @@ interface MintedFact {
 
 export async function POST(request: Request) {
   console.log('\n=== Starting new request ===\n');
+  const corsHeaders = getCorsHeaders(request);
   
   let body;
   try {
@@ -45,10 +48,16 @@ export async function POST(request: Request) {
 
     if (!url) {
       console.log('Request missing URL');
-      return corsResponse(NextResponse.json(
-        { error: "URL is required" },
-        { status: 400 }
-      ));
+      return new NextResponse(
+        JSON.stringify({ error: "URL is required" }),
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
     }
 
     console.log('Processing URL:', url);
@@ -57,10 +66,20 @@ export async function POST(request: Request) {
     
     if (!parseResult?.content) {
       console.log('Failed to extract content from URL');
-      return corsResponse(NextResponse.json(
-        { success: false, error: "Failed to extract content from URL", url },
-        { status: 400 }
-      ));
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: "Failed to extract content from URL", 
+          url 
+        }),
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
     }
 
     console.log('Content extracted successfully. Length:', parseResult.content.length);
@@ -100,12 +119,20 @@ export async function POST(request: Request) {
 
     if (allFacts.length === 0) {
       console.log('No valid facts extracted');
-      return corsResponse(NextResponse.json({
-        success: false,
-        error: "No valid facts extracted",
-        url,
-        title: parseResult.title
-      }));
+      return new NextResponse(
+        JSON.stringify({
+          success: false,
+          error: "No valid facts extracted",
+          url,
+          title: parseResult.title
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
     }
 
     console.log('Sending facts to NFT creation endpoint');
@@ -135,22 +162,30 @@ export async function POST(request: Request) {
 
     const mintIds = mintedFacts.map(mf => mf.mintId);
 
-    return corsResponse(NextResponse.json({
-      success: true,
-      totalFactsProcessed: allFacts.length,
-      totalMinted: mintedFacts.length,
-      mintIds: mintIds,
-      mintedFacts: mintedFacts,
-      processingDetails: {
-        url: url,
-        title: parseResult.title,
-        contentLength: parseResult.content.length,
-        factsSent: allFacts.length,
-        successfulMints: nftResults.successfulMints,
-        totalBatches: nftResults.totalBatches,
-        validFactsProcessed: nftResults.validFactsProcessed
+    return new NextResponse(
+      JSON.stringify({
+        success: true,
+        totalFactsProcessed: allFacts.length,
+        totalMinted: mintedFacts.length,
+        mintIds: mintIds,
+        mintedFacts: mintedFacts,
+        processingDetails: {
+          url: url,
+          title: parseResult.title,
+          contentLength: parseResult.content.length,
+          factsSent: allFacts.length,
+          successfulMints: nftResults.successfulMints,
+          totalBatches: nftResults.totalBatches,
+          validFactsProcessed: nftResults.validFactsProcessed
+        }
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       }
-    }));
+    );
 
   } catch (error: any) {
     console.error('Error in POST handler:', {
@@ -160,14 +195,20 @@ export async function POST(request: Request) {
       data: error?.response?.data
     });
     
-    return corsResponse(NextResponse.json(
-      { 
+    return new NextResponse(
+      JSON.stringify({ 
         success: false, 
         error: "Failed to process request", 
         details: error.message,
         url: body?.url 
-      },
-      { status: 500 }
-    ));
+      }),
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      }
+    );
   }
 }

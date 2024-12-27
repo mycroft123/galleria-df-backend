@@ -27,7 +27,7 @@ const getCorsHeaders = (request: Request): HeadersInit => {
 };
 
 // Rate limiting helper function
-function checkRateLimit(ip) {
+function checkRateLimit(ip: string) {
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 minute window
   
@@ -57,33 +57,33 @@ function checkRateLimit(ip) {
 }
 
 // OpenAI interaction helper
-async function getSearchStrategies(question) {
+async function getSearchStrategies(question: string) {
   try {
     console.log('\n[OpenAI] Sending request to OpenAI...');
     
     const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [{
-          role: "system",
-          content: "Provide a JSON response to sugeest at least 3 options, each a website and search terms to fact-check the questions. Use this format: [{\"source\": \"ExampleWebsite\", \"searchTerms\": [\"ExampleTerm1\", \"ExampleTerm2\"]}]"
-        }, {
-          role: "user",
-          content: `Question: Did the White House publish the State of the Union?  
-          [{"source": "WhiteHouse.gov", "searchTerms": ["State of the Union"]}];  
-          Question: ${question}`
-        }],
-        temperature: 0.7,
-        max_tokens: 500
-      });
-      
-      console.log('\n[OpenAI] Received response from OpenAI');
-      
-      const strategies = completion?.choices?.[0]?.message?.content
-        ? completion.choices[0].message.content
-            .split('\n')
-            .filter(line => line.trim().length > 0)
-            .map(strategy => strategy.trim())
-        : [];
+      model: "gpt-4",
+      messages: [{
+        role: "system",
+        content: "Provide a JSON response to suggest at least 3 options, each a website and search terms to fact-check the questions. Use this format: [{\"source\": \"ExampleWebsite\", \"searchTerms\": [\"ExampleTerm1\", \"ExampleTerm2\"]}]"
+      }, {
+        role: "user",
+        content: `Question: Did the White House publish the State of the Union?  
+        [{"source": "WhiteHouse.gov", "searchTerms": ["State of the Union"]}];  
+        Question: ${question}`
+      }],
+      temperature: 0.7,
+      max_tokens: 500
+    });
+    
+    console.log('\n[OpenAI] Received response from OpenAI');
+    
+    const strategies = completion?.choices?.[0]?.message?.content
+      ? completion.choices[0].message.content
+          .split('\n')
+          .filter(line => line.trim().length > 0)
+          .map(strategy => strategy.trim())
+      : [];
 
     return strategies;
     
@@ -105,10 +105,9 @@ export async function OPTIONS(request: Request) {
 export async function POST(request: Request) {
   console.log('\n=== New Request ===');
   const requestStart = Date.now();
+  const corsHeaders = getCorsHeaders(request);
 
   try {
-    const corsHeaders = getCorsHeaders(request);
-
     // Log request headers
     console.log('\n[Headers Debug]');
     const headers = Object.fromEntries(request.headers);

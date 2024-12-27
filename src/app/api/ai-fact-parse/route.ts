@@ -13,17 +13,17 @@ const allowedOrigins = [
   'https://galleria-df.vercel.app',
 ];
 
-export const corsHeaders = (req) => {
-  const origin = req.headers.origin;
-  const isAllowedOrigin = allowedOrigins.includes(origin);
+// Changed to a regular function (not exported)
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin');
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
 
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Return 'null' for disallowed origins
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
-};
-
+}
 
 // Rate limiting configuration
 const REQUESTS_PER_MINUTE = 10;
@@ -161,8 +161,10 @@ async function processSentences(content: string): Promise<FactAnalysis[]> {
 }
 
 // Add OPTIONS handler for CORS preflight requests
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(request: Request) {
+  return NextResponse.json({}, { 
+    headers: getCorsHeaders(request) 
+  });
 }
 
 export async function POST(request: Request) {
@@ -175,7 +177,7 @@ export async function POST(request: Request) {
         { error: "Rate limit exceeded. Please try again later." },
         { 
           status: 429,
-          headers: corsHeaders
+          headers: getCorsHeaders(request)
         }
       );
     }
@@ -188,7 +190,7 @@ export async function POST(request: Request) {
         { error: "URL is required" },
         { 
           status: 400,
-          headers: corsHeaders
+          headers: getCorsHeaders(request)
         }
       );
     }
@@ -206,7 +208,7 @@ export async function POST(request: Request) {
         },
         { 
           status: 400,
-          headers: corsHeaders
+          headers: getCorsHeaders(request)
         }
       );
     }
@@ -231,7 +233,7 @@ export async function POST(request: Request) {
           timestamp: new Date().toISOString()
         }
       }, { 
-        headers: corsHeaders 
+        headers: getCorsHeaders(request) 
       });
     }
 
@@ -247,7 +249,7 @@ export async function POST(request: Request) {
         timestamp: new Date().toISOString()
       }
     }, { 
-      headers: corsHeaders 
+      headers: getCorsHeaders(request) 
     });
 
   } catch (error) {
@@ -269,7 +271,7 @@ export async function POST(request: Request) {
       },
       { 
         status: 500,
-        headers: corsHeaders
+        headers: getCorsHeaders(request)
       }
     );
   }

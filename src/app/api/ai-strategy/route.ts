@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -16,17 +15,16 @@ const ALLOWED_ORIGINS = [
   'https://galleria-df.vercel.app',
 ];
 
-const getCorsHeaders = (req) => {
-  const origin = req.headers.origin; // Extract the origin from the incoming request
-  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+const getCorsHeaders = (request: Request): HeadersInit => {
+  const origin = request.headers.get('origin');
+  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Dynamically set allowed origin
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 };
-
 
 // Rate limiting helper function
 function checkRateLimit(ip) {
@@ -80,13 +78,12 @@ async function getSearchStrategies(question) {
       
       console.log('\n[OpenAI] Received response from OpenAI');
       
-    
       const strategies = completion?.choices?.[0]?.message?.content
-      ? completion.choices[0].message.content
-          .split('\n')
-          .filter(line => line.trim().length > 0)
-          .map(strategy => strategy.trim())
-      : [];
+        ? completion.choices[0].message.content
+            .split('\n')
+            .filter(line => line.trim().length > 0)
+            .map(strategy => strategy.trim())
+        : [];
 
     return strategies;
     
@@ -97,19 +94,21 @@ async function getSearchStrategies(question) {
 }
 
 // Handle CORS preflight
-export async function OPTIONS() {
+export async function OPTIONS(request: Request) {
   return new NextResponse(null, {
     status: 204,
-    headers: corsHeaders(),
+    headers: getCorsHeaders(request),
   });
 }
 
 // Main POST handler
-export async function POST(request) {
+export async function POST(request: Request) {
   console.log('\n=== New Request ===');
   const requestStart = Date.now();
 
   try {
+    const corsHeaders = getCorsHeaders(request);
+
     // Log request headers
     console.log('\n[Headers Debug]');
     const headers = Object.fromEntries(request.headers);
@@ -137,7 +136,7 @@ export async function POST(request) {
           status: 429,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders()
+            ...corsHeaders
           }
         }
       );
@@ -165,7 +164,7 @@ export async function POST(request) {
           status: 400,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders()
+            ...corsHeaders
           }
         }
       );
@@ -195,7 +194,7 @@ export async function POST(request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders()
+          ...corsHeaders
         }
       }
     );
@@ -219,7 +218,7 @@ export async function POST(request) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders()
+          ...corsHeaders
         }
       }
     );

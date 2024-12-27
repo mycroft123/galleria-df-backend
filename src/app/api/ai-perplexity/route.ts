@@ -4,15 +4,12 @@ import { NextResponse } from 'next/server';
 const REQUESTS_PER_MINUTE = 10;
 const requestCounts = new Map();
 
-// Helper function to add CORS headers
-function corsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': 'http://localhost:3001',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
-    'Access-Control-Max-Age': '86400',
-  };
-}
+// CORS configuration - now just an object, not a function
+const corsHeaders = {
+  'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || 'http://localhost:3001',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
 // Rate limiting helper function
 function checkRateLimit(ip) {
@@ -70,7 +67,7 @@ async function getPerplexityResponse(requestBody) {
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: corsHeaders(),
+    headers: corsHeaders, // Now using the object directly
   });
 }
 
@@ -107,7 +104,7 @@ export async function POST(request) {
           status: 429,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders()
+            ...corsHeaders // Now using the object directly
           }
         }
       );
@@ -135,7 +132,7 @@ export async function POST(request) {
           status: 400,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders()
+            ...corsHeaders // Now using the object directly
           }
         }
       );
@@ -160,8 +157,8 @@ export async function POST(request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders()
-        }
+          ...corsHeaders // Now using the object directly
+          }
       }
     );
 
@@ -184,7 +181,7 @@ export async function POST(request) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders()
+          ...corsHeaders // Now using the object directly
         }
       }
     );

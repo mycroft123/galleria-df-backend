@@ -7,12 +7,22 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-function corsResponse(response: NextResponse) {
-  response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-  return response;
-}
+const ALLOWED_ORIGINS = [
+  'http://localhost:3001',
+  'https://galleria-df.vercel.app',
+];
+
+const getCorsHeaders = (req) => {
+  const origin = req.headers.origin; // Extract the origin from the incoming request
+  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+
+  return {
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Dynamically set allowed origin
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+};
+
 
 export async function OPTIONS() {
   return corsResponse(new NextResponse(null, { status: 200 }));

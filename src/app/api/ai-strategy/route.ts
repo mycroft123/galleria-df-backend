@@ -11,15 +11,22 @@ const openai = new OpenAI({
 const REQUESTS_PER_MINUTE = 10;
 const requestCounts = new Map();
 
-// Helper function to add CORS headers
-function corsHeaders() {
+const ALLOWED_ORIGINS = [
+  'http://localhost:3001',
+  'https://galleria-df.vercel.app',
+];
+
+const getCorsHeaders = (req) => {
+  const origin = req.headers.origin; // Extract the origin from the incoming request
+  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+
   return {
-    'Access-Control-Allow-Origin': 'http://localhost:3001',
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Dynamically set allowed origin
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
-    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
-}
+};
+
 
 // Rate limiting helper function
 function checkRateLimit(ip) {
@@ -80,7 +87,7 @@ async function getSearchStrategies(question) {
           .filter(line => line.trim().length > 0)
           .map(strategy => strategy.trim())
       : [];
-      
+
     return strategies;
     
   } catch (error) {

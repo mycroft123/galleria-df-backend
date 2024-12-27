@@ -8,12 +8,22 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// CORS configuration
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'http://localhost:3001',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+const allowedOrigins = [
+  'http://localhost:3001',
+  'https://galleria-df.vercel.app',
+];
+
+export const corsHeaders = (req) => {
+  const origin = req.headers.origin;
+  const isAllowedOrigin = allowedOrigins.includes(origin);
+
+  return {
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Return 'null' for disallowed origins
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
 };
+
 
 // Rate limiting configuration
 const REQUESTS_PER_MINUTE = 10;

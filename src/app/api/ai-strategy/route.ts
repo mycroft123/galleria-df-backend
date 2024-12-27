@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -16,45 +15,38 @@ const ALLOWED_ORIGINS = [
   'https://galleria-df.vercel.app',
 ];
 
-const getCorsHeaders = (req) => {
-  const origin = req.headers.origin; // Extract the origin from the incoming request
-  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+// Updated to use Request type
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin');
+  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null', // Dynamically set allowed origin
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'null',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
-};
-
+}
 
 // Rate limiting helper function
 function checkRateLimit(ip) {
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 minute window
   
-  // Get the existing request count data
   const requestData = requestCounts.get(ip) || { count: 0, windowStart: now };
   
-  // If the window has expired, reset the count
   if (now - requestData.windowStart > windowMs) {
     requestData.count = 0;
     requestData.windowStart = now;
   }
   
-  // Increment request count
   requestData.count += 1;
-  
-  // Update the map
   requestCounts.set(ip, requestData);
   
-  // Log rate limit info for debugging
   console.log(`\n[Rate Limit Debug] IP: ${ip}`);
   console.log(`Requests in current window: ${requestData.count}`);
   console.log(`Window start: ${new Date(requestData.windowStart).toISOString()}`);
   console.log(`Limit: ${REQUESTS_PER_MINUTE} requests per minute`);
   
-  // Check if rate limit is exceeded
   return requestData.count <= REQUESTS_PER_MINUTE;
 }
 
@@ -80,7 +72,6 @@ async function getSearchStrategies(question) {
       
       console.log('\n[OpenAI] Received response from OpenAI');
       
-    
       const strategies = completion?.choices?.[0]?.message?.content
       ? completion.choices[0].message.content
           .split('\n')
@@ -97,15 +88,15 @@ async function getSearchStrategies(question) {
 }
 
 // Handle CORS preflight
-export async function OPTIONS() {
+export async function OPTIONS(request: Request) {
   return new NextResponse(null, {
     status: 204,
-    headers: corsHeaders(),
+    headers: getCorsHeaders(request),
   });
 }
 
 // Main POST handler
-export async function POST(request) {
+export async function POST(request: Request) {
   console.log('\n=== New Request ===');
   const requestStart = Date.now();
 
@@ -137,7 +128,7 @@ export async function POST(request) {
           status: 429,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders()
+            ...getCorsHeaders(request)
           }
         }
       );
@@ -165,7 +156,7 @@ export async function POST(request) {
           status: 400,
           headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders()
+            ...getCorsHeaders(request)
           }
         }
       );
@@ -195,7 +186,7 @@ export async function POST(request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders()
+          ...getCorsHeaders(request)
         }
       }
     );
@@ -219,7 +210,7 @@ export async function POST(request) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders()
+          ...getCorsHeaders(request)
         }
       }
     );

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -73,12 +74,13 @@ async function getSearchStrategies(question) {
       console.log('\n[OpenAI] Received response from OpenAI');
       
     
-    // Extract and process the strategies from the completion
-    const strategies = completion.choices[0].message.content
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map(strategy => strategy.trim());
-
+      const strategies = completion?.choices?.[0]?.message?.content
+      ? completion.choices[0].message.content
+          .split('\n')
+          .filter(line => line.trim().length > 0)
+          .map(strategy => strategy.trim())
+      : [];
+      
     return strategies;
     
   } catch (error) {

@@ -1,8 +1,6 @@
-// src/app/api/facts-to-nfts/route.ts
-
 import { NextResponse } from 'next/server';
 import { parseAndAnalyzePage } from '../../../../aiClient';
-import OpenAI from 'openai';
+import { OpenAI } from 'openai';
 import { BatchProcessor } from './batchProcessor';
 
 const openai = new OpenAI({
@@ -30,8 +28,9 @@ interface MintedFact {
 export async function POST(request: Request) {
   console.log('\n=== Starting new request ===\n');
   
+  let body;
   try {
-    const body = await request.json();
+    body = await request.json();
     const { url } = body;
 
     if (!url) {
@@ -113,7 +112,6 @@ export async function POST(request: Request) {
     const rawResponse = await nftResponse.text();
     const nftResults = JSON.parse(rawResponse);
 
-    // Extract both mint IDs and facts
     const mintedFacts: MintedFact[] = nftResults.results
       .filter((result: any) => result.success && result.assetId)
       .map((result: any) => ({
@@ -125,15 +123,14 @@ export async function POST(request: Request) {
 
     console.log(`Found ${mintedFacts.length} minted facts`);
 
-    // Get just the mint IDs for backward compatibility
     const mintIds = mintedFacts.map(mf => mf.mintId);
 
     return corsResponse(NextResponse.json({
       success: true,
       totalFactsProcessed: allFacts.length,
       totalMinted: mintedFacts.length,
-      mintIds: mintIds, // Keep the original mintIds array for backward compatibility
-      mintedFacts: mintedFacts, // New field with both mint IDs and facts
+      mintIds: mintIds,
+      mintedFacts: mintedFacts,
       processingDetails: {
         url: url,
         title: parseResult.title,

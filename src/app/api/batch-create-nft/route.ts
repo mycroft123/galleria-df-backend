@@ -1,4 +1,4 @@
-import { MintResult } from '../../../types';
+import { MintResult } from '@/types/index';
 import { processBatch, transferTokens } from '../../../lib/nftProcessing';
 import { isValidFact } from './validation';
 

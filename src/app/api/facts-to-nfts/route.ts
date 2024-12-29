@@ -8,16 +8,16 @@ const openai = new OpenAI({
 });
 
 const ALLOWED_ORIGINS = [
-  'http://localhost:3001',
-  'https://galleria-df.vercel.app',
+  'https://galleria-df.vercel.app',  // Production frontend
+  'http://localhost:3001',           // Local development
+  'http://localhost:3000'            // Local development
 ];
 
 const getCorsHeaders = (request: Request): HeadersInit => {
-  const origin = request.headers.get('origin');
-  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
-
+  const origin = request.headers.get('origin') || '';
+  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '*',
+    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : ALLOWED_ORIGINS[0], // Default to production
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };

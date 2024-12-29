@@ -7,21 +7,24 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-const ALLOWED_ORIGINS = [
-  'https://galleria-df.vercel.app',  // Production frontend
-  'http://localhost:3001',           // Local development
-  'http://localhost:3000'            // Local development
-];
+// CORS configuration with type safety
+const corsHeaders = {
+  'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
+    ? 'https://galleria-df.vercel.app'
+    : ['http://localhost:3001', 'http://localhost:3000'].includes(process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || '') 
+      ? process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || 'http://localhost:3001'  // Provide default value
+      : 'http://localhost:3001',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+} as const;  // Make the object type readonly and exact
 
-const getCorsHeaders = (request: Request): HeadersInit => {
-  const origin = request.headers.get('origin') || '';
-  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
-  return {
-    'Access-Control-Allow-Origin': isAllowedOrigin ? origin : ALLOWED_ORIGINS[0], // Default to production
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  };
-};
+// Handle CORS preflight
+export async function OPTIONS() {
+return new NextResponse(null, {
+  status: 204,
+  headers: corsHeaders,
+});
+}
 
 export async function OPTIONS(request: Request) {
   return new NextResponse(null, {

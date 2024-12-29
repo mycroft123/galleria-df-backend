@@ -2,36 +2,14 @@ import { NextResponse } from 'next/server';
 import { parseAndAnalyzePage } from '../../../../aiClient';
 import { OpenAI } from 'openai';
 import { BatchProcessor } from './batchProcessor';
+import { corsHeaders, handleOptions } from '@/lib/cors';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// CORS configuration with type safety
-const corsHeaders = {
-  'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
-    ? 'https://galleria-df.vercel.app'
-    : ['http://localhost:3001', 'http://localhost:3000'].includes(process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || '') 
-      ? process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || 'http://localhost:3001'  // Provide default value
-      : 'http://localhost:3001',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-} as const;  // Make the object type readonly and exact
-
 // Handle CORS preflight
-export async function OPTIONS() {
-return new NextResponse(null, {
-  status: 204,
-  headers: corsHeaders,
-});
-}
-
-export async function OPTIONS(request: Request) {
-  return new NextResponse(null, {
-    status: 204,
-    headers: getCorsHeaders(request),
-  });
-}
+export const OPTIONS = handleOptions;
 
 interface MintedFact {
   mintId: string;
@@ -42,7 +20,6 @@ interface MintedFact {
 
 export async function POST(request: Request) {
   console.log('\n=== Starting new request ===\n');
-  const corsHeaders = getCorsHeaders(request);
   
   let body;
   try {

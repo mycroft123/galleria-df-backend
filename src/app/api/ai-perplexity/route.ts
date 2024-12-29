@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { corsHeaders, handleOptions } from '@/lib/cors';
+import { handleOptions, getCorsResponseHeaders } from '@/lib/cors';
 
 // Rate limiter configuration
 const REQUESTS_PER_MINUTE = 10;
@@ -76,6 +76,9 @@ export async function POST(request) {
     const ip = forwarded ? forwarded.split(/, /)[0] : "127.0.0.1";
     console.log(`\n[IP Debug] Detected IP: ${ip}`);
 
+    // Get CORS headers for this request
+    const corsHeaders = getCorsResponseHeaders(request);
+
     // Check rate limit
     if (!checkRateLimit(ip)) {
       console.warn(`[Rate Limit] Request blocked for IP: ${ip}`);
@@ -100,7 +103,6 @@ export async function POST(request) {
     }
 
     // Parse request body
-    console.log('\n[Body Debug] Parsing request body...');
     const body = await request.json();
     console.log('[Body Debug] Received body:', JSON.stringify(body, null, 2));
 
@@ -139,7 +141,6 @@ export async function POST(request) {
       }
     };
 
-    console.log('\n[Response Debug] Sending response:', JSON.stringify(response, null, 2));
     return new NextResponse(
       JSON.stringify(response),
       { 
@@ -154,6 +155,10 @@ export async function POST(request) {
   } catch (error) {
     console.error('\n[Error Debug] Full error:', error);
     console.error('[Error Debug] Stack trace:', error.stack);
+    
+    // Get CORS headers for error response
+    const corsHeaders = getCorsResponseHeaders(request);
+    
     return new NextResponse(
       JSON.stringify({
         success: false,

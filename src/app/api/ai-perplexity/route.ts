@@ -4,12 +4,16 @@ import { NextResponse } from 'next/server';
 const REQUESTS_PER_MINUTE = 10;
 const requestCounts = new Map();
 
-// CORS configuration - now just an object, not a function
+// CORS configuration
 const corsHeaders = {
-  'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || 'http://localhost:3001',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+    'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
+      ? 'https://galleria-df.vercel.app'
+      : ['http://localhost:3001', 'http://localhost:3000'].includes(process.env.NEXT_PUBLIC_ALLOWED_ORIGIN || '') 
+        ? process.env.NEXT_PUBLIC_ALLOWED_ORIGIN 
+        : 'http://localhost:3001',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
 
 // Rate limiting helper function
 function checkRateLimit(ip) {
